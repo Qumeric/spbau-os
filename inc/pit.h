@@ -17,11 +17,11 @@ void initialize_pit()
     // 0 channel
     data += (0 << 6);
 
-    out8(pic_command_port, data);
+    out8(pit_command_port, data);
     
     // sending initial value
-    out8(channel_0_data_port, (1 << 8) - 1);
-    out8(channel_0_data_port, (1 << 8) - 1);    
+    out8(pit_0_data_port, (1 << 8) - 1);
+    out8(pit_0_data_port, (1 << 8) - 1);    
 
     // reveal pit to master
     out8(master_data_port, ((1 << 8) - 1) - 1);

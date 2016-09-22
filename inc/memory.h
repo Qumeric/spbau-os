@@ -14,7 +14,7 @@
 
 #define serial_port 0x3f8
 
-#define channel_0_data_port 0x40
-#define pic_command_port 0x43
+#define pit_0_data_port 0x40
+#define pit_command_port 0x43
 
 #endif /* MEMORY_H */
