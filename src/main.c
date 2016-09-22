@@ -17,6 +17,9 @@ void main(void)
 
     __asm__("sti");
 
+    // uncomment to get the second task
+    //__asm__("int $33");
+    
     int wait = 1;
     while (wait);
 }
