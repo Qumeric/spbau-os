@@ -147,9 +147,10 @@ static void initialize_idt()
         if (i < DESC_SYSTEM_NUMBER)
         {
             table[i].e4 += (3 << 13);
-        }                                                                               // TYPE
+        }                                                                               
+        // TYPE
         table[i].e4 += (14 << 8);
-                                                                                        table[i].e4 += (offset & bits_16_31);
+        table[i].e4 += (offset & bits_16_31);
                                        
         table[i].e8 = (offset >> 32);
 
