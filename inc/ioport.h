@@ -37,59 +37,8 @@ static inline uint32_t in32(unsigned short port)
 	return value;
 }
 
-static void serial_port_print_char(char c)
-{
-    while (1) 
-    {
-        uint8_t p5 = in8(serial_port + 5);
-        if (p5 & (1 << 5)) 
-        {
-            out8(serial_port + 0, c);
-            break;
-        }
-    }
-}
+void serial_port_char(char c);
 
-static void serial_port_print(char *mes) 
-{
-    for (int i = 0; mes[i] != 0; i++) 
-    {
-        serial_port_print_char(mes[i]);
-    }
-}
-
-static void serial_port_number(uint64_t x)
-{
-    int a[70];
-    int cnt = 0;
-    while (x > 0)
-    {
-        a[cnt++] = x % 10;
-        x /= 10;
-    }
-    if (cnt == 0)
-    {
-        cnt = 1;
-    }
-    do
-    {
-        serial_port_print_char('0' + a[--cnt]);
-    } while (cnt > 0);
-}
-
-static void initialize_serial_port() 
-{
-    // divisor coef
-    out8(serial_port + 3, 1 << 7);
-    out8(serial_port + 0, 1);
-    out8(serial_port + 1, 0);
-
-    // disable interrupts 
-    out8(serial_port + 3, 0);
-    out8(serial_port + 1, 0);
-
-    // frame format
-    out8(serial_port + 3, 7);
-}
+void initialize_serial_port();
 
 #endif /* __IOPORT_H__ */
