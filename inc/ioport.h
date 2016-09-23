@@ -2,7 +2,6 @@
 #define __IOPORT_H__
 
 #include <stdint.h>
-#include <bit.h>
 #include <memory.h>
 
 static inline void out8(unsigned short port, uint8_t data)
@@ -59,25 +58,38 @@ static void serial_port_print(char *mes)
     }
 }
 
+static void serial_port_number(uint64_t x)
+{
+    int a[70];
+    int cnt = 0;
+    while (x > 0)
+    {
+        a[cnt++] = x % 10;
+        x /= 10;
+    }
+    if (cnt == 0)
+    {
+        cnt = 1;
+    }
+    do
+    {
+        serial_port_print_char('0' + a[--cnt]);
+    } while (cnt > 0);
+}
+
 static void initialize_serial_port() 
 {
-    // div
-    uint8_t p3 = in8(serial_port + 3);
-    setbit(&p3, 7); 
-    out8(serial_port + 3, p3);
+    // divisor coef
+    out8(serial_port + 3, 1 << 7);
     out8(serial_port + 0, 1);
     out8(serial_port + 1, 0);
 
     // disable interrupts 
-    p3 = in8(serial_port + 3);
-    clearbit(&p3, 7);
-    out8(serial_port + 3, p3);
+    out8(serial_port + 3, 0);
     out8(serial_port + 1, 0);
 
     // frame format
-    p3 = in8(serial_port + 3);
-    setbit(&p3, 0);
-    setbit(&p3, 1);
+    out8(serial_port + 3, 7);
 }
 
 #endif /* __IOPORT_H__ */

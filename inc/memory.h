@@ -17,4 +17,6 @@
 #define pit_0_data_port 0x40
 #define pit_command_port 0x43
 
+#define PIT_IDT_ENTRY 32 
+
 #endif /* MEMORY_H */

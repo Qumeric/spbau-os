@@ -37,83 +37,22 @@ struct desc_table_entry {
     uint32_t e12;
 } __attribute__((packed));
 
-#define PUSH_REGISTERS     \
-    __asm__("pushq %rax"); \
-    __asm__("pushq %rbx"); \
-    __asm__("pushq %rcx"); \
-    __asm__("pushq %rdx"); \
-    __asm__("pushq %rsi"); \
-    __asm__("pushq %rdi"); \
-    __asm__("pushq %rbp"); \
-    __asm__("pushq %rsp"); \
-    __asm__("pushq %r8");  \
-    __asm__("pushq %r9");  \
-    __asm__("pushq %r10"); \
-    __asm__("pushq %r11"); \
-    __asm__("pushq %r12"); \
-    __asm__("pushq %r13"); \
-    __asm__("pushq %r14"); \
-    __asm__("pushq %r15");
-
-#define POP_REGISTERS     \
-    __asm__("popq %r15"); \
-    __asm__("popq %r14"); \
-    __asm__("popq %r13"); \
-    __asm__("popq %r12"); \
-    __asm__("popq %r11"); \
-    __asm__("popq %r10"); \
-    __asm__("popq %r9");  \
-    __asm__("popq %r8");  \
-    __asm__("popq %rsp"); \
-    __asm__("popq %rbp"); \
-    __asm__("popq %rdi"); \
-    __asm__("popq %rsi"); \
-    __asm__("popq %rdx"); \
-    __asm__("popq %rcx"); \
-    __asm__("popq %rbx"); \
-    __asm__("popq %rax"); 
-
-void interrupt_handler()
+void interrupt_handler(uint64_t interruption_code)
 {
-    char* mes = "Hello from interrupt handler!\n\0";
-    serial_port_print(mes);
-}
+    serial_port_print("interrupt handler ");
+    serial_port_number(interruption_code);
+    serial_port_print_char('\n');
 
-void interrupt_handler_pit()
-{
-    char* mes = "PIT interrupt handler.\n\0";
-    serial_port_print(mes);
-
-    out8(master_command_port, 1 << 5);
-}
-
-void interrupt_wrapper_with_error()
-{
-    __asm__("add $8, %rsp");
-    PUSH_REGISTERS
-    __asm__("call interrupt_handler");
-    POP_REGISTERS
-    __asm__("iretq");
-}
-
-void interrupt_wrapper_pit()
-{
-    PUSH_REGISTERS
-    __asm__("call interrupt_handler_pit");
-    POP_REGISTERS
-    __asm__("iretq");
-}
-
-void interrupt_wrapper_without_error()
-{
-    PUSH_REGISTERS
-    __asm__("call interrupt_handler");
-    POP_REGISTERS
-    __asm__("iretq");
+    if (interruption_code == PIT_IDT_ENTRY)
+    {
+        out8(master_command_port, 1 << 5);    
+    }
 }
 
 #define DESC_SYSTEM_NUMBER 32
 #define DESC_NUMBER 48
+
+extern uint64_t handler_wrappers[];
 
 static struct desc_table_entry table[DESC_NUMBER];
 
@@ -124,30 +63,13 @@ static void initialize_idt()
 
     for (int i = 0; i < DESC_NUMBER; i++) 
     {
-        uint64_t offset;
-        if (i == 8 || (10 <= i && i <= 14) || i == 17)
-        {
-            offset = (uint64_t)&interrupt_wrapper_with_error;
-        } 
-        else if (i == 32)
-        {
-            offset = (uint64_t)&interrupt_wrapper_pit;
-        }
-        else 
-        {
-            offset = (uint64_t)&interrupt_wrapper_without_error;
-        }
+        uint64_t offset = handler_wrappers[i];
         uint32_t segment_selector = KERNEL_CS; 
 
         table[i].e0 = (offset & bits_0_15) + (segment_selector << 16);
 
         // P
         table[i].e4 = (1 << 15);
-        // DPL
-        if (i < DESC_SYSTEM_NUMBER)
-        {
-            table[i].e4 += (3 << 13);
-        }                                                                               
         // TYPE
         table[i].e4 += (14 << 8);
         table[i].e4 += (offset & bits_16_31);
@@ -157,9 +79,7 @@ static void initialize_idt()
         table[i].e12 = 0;
     }
 
-    struct desc_table_ptr pointer;
-    pointer.size = DESC_NUMBER * 16 - 1;
-    pointer.addr = (uint64_t)&table;
+    struct desc_table_ptr pointer = {sizeof(table) - 1, (uint64_t)&table};
     write_idtr(&pointer);
 }
 
