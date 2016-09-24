@@ -8,10 +8,21 @@ extern uint64_t handler_wrappers[];
 
 static struct desc_table_entry table[DESC_NUMBER];
 
-void interrupt_handler(uint64_t interruption_code)
+void interrupt_handler(uint64_t interrupt_vector, uint64_t error_code)
 {
-    printf("interrupr handler %llu\n", interruption_code);
-    if (interruption_code == PIT_IDT_ENTRY)
+    printf("Interrupt handler: ");
+    if ((10 <= interrupt_vector && interrupt_vector <= 14)
+       || 8 == interrupt_vector || interrupt_vector == 17)
+    {
+        printf("interrupt vector %llu with error code %llu\n", 
+                interrupt_vector, error_code);
+    }
+    else
+    {
+        printf("interrupt vector %llu\n", interrupt_vector);
+    }
+
+    if (interrupt_vector == PIT_IDT_ENTRY)
     {
         out8(master_command_port, 1 << 5);    
     }

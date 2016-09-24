@@ -42,7 +42,8 @@
 .macro WRAPPER N 
 wrapper\N: 
     PUSH_REGISTERS
-    movq $\N, %rdi
+    movq $\N, %rdi    
+    movq $0, %rsi
     cld
     call interrupt_handler
     POP_REGISTERS
@@ -51,13 +52,13 @@ wrapper\N:
 
 .macro ERROR_WRAPPER N
 wrapper\N:
-    add $8, %rsp 
-
     PUSH_REGISTERS
-    movq $\N, %rdi    
+    movq $\N, %rdi
+    movq 120(%rsp), %rsi
     cld
     call interrupt_handler
     POP_REGISTERS
+    addq $8, %rsp
     iretq
 .endm
 
