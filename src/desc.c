@@ -69,5 +69,9 @@ void initialize_pic()
     //configuration data
     out8(master_data_port, 1 << 2);
     out8(slave_data_port, 2);
+
+    //hide interruptions for pics
+    out8(master_data_port, (1 << 8) - 1);
+    out8(master_data_port, (1 << 8) - 1);   
 }
 

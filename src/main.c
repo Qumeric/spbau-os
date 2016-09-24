@@ -2,10 +2,11 @@
 #include <memory.h>
 #include <ioport.h>
 #include <pit.h>
+#include <ints.h>
 
 void main(void)
 {
-    __asm__("cli");
+    disable_ints();    
 
     initialize_serial_port();
 
@@ -15,7 +16,7 @@ void main(void)
 
     initialize_pit();
 
-    __asm__("sti");
+    enable_ints();
 
     __asm__("int $3");
 
