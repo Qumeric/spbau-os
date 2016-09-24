@@ -21,6 +21,7 @@ static char basefor(char symbolic)
 
 static void print_char(char buffered, char* buffer, size_t buf_size, size_t* ps, char c)
 {
+    (*ps)++;
     if (buffered)
     {
         if (*ps + 1 >= buf_size) 
@@ -33,7 +34,6 @@ static void print_char(char buffered, char* buffer, size_t buf_size, size_t* ps,
     {
         serial_port_char(c);
     }
-    (*ps)++;
 }
 
 static void print_uint(char buffered, char* buffer, size_t buf_size, size_t* ps, 
@@ -78,13 +78,8 @@ static void print_int(char buffered, char* buffer, size_t buf_size, size_t* ps,
 static int generic_printf(char buffered, char* buffer, size_t buf_size, 
                           const char* fmt, va_list args)
 {
-    if (buffered && buf_size == 0)
-    {
-        return -1;
-    }
-
     size_t ps = 0;
-    for (const char* p = fmt; (*p != 0) && ((!buffered) || ps + 1 < buf_size); p++)
+    for (const char* p = fmt; *p != 0; p++)
     {
         if (*p != '%')
         {
