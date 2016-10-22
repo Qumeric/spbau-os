@@ -3,7 +3,8 @@
 
 typedef unsigned long memory_chunk_addr;
 
-struct memory_chunk {
+struct memory_chunk 
+{
     memory_chunk_addr first;
     memory_chunk_addr until;
 };

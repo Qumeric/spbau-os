@@ -1,10 +1,14 @@
+#include <stdarg.h>
 #include <utils.h>
 #include <ints.h>
-#include <io.h>
 
-void halt_program(const char* message)
+void halt_program(const char* fmt, ...)
 {
-    printf("%s", message);
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
+
     disable_ints();
     __asm__("hlt");
 }

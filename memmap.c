@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <io.h>
 #include <utils.h>
+#include <buddy_allocator.h>
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
 
@@ -22,11 +23,12 @@ void add_chunk(unsigned long first, unsigned long until,
 
 void initialize_memory() 
 {
+    printf("Getting memory map from multiboot...\n");
     multiboot_info_t *mbi = (multiboot_info_t *) (unsigned long) multiboot_info;
 
     if (!CHECK_FLAG(mbi->flags, 6)) 
     {
-        halt_program("Could not get memmap. Program will be halted.\n");
+        halt_program("Could not get memmap.\n");
     }
 
     unsigned long kernel_first_byte = (unsigned long) text_phys_begin;
@@ -80,10 +82,13 @@ void initialize_memory()
         mmap = (multiboot_memory_map_t *) 
                ((unsigned long) mmap + mmap->size + sizeof (mmap->size));
     }
-
     printf("Free chunks are:\n");
-    for (int i = 0; i < chunks_free; i++) {
+    for (int i = 0; i < chunks_free; i++) 
+    {
         printf("0x%lx...0x%lx\n", chunks[i].first, chunks[i].until);
     }
+    printf("\n");
+
+    buddy_allocator_init(chunks, chunks_free);   
 }
 
