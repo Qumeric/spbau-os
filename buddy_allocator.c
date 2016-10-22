@@ -3,41 +3,8 @@
 #include <memory.h>
 #include <utils.h>
 
-#define BUDDY_USED (0 << 6)
-#define BUDDY_FREE (1 << 6)
-
-struct buddy_descriptor 
-{
-    /* 
-     * first 6 bits describe level
-     * last 2 bits -- state
-     */
-    uint8_t flags;
-    int32_t prev;
-    int32_t next;
-};
-
-static uint8_t desc_get_level(struct buddy_descriptor *desc)
-{
-    return (desc->flags) & 0x3f;
-}
-
-static uint8_t desc_get_state(struct buddy_descriptor *desc)
-{
-    return (desc->flags) & 0xc0;
-}
-
-static void desc_set_level(struct buddy_descriptor *desc, uint8_t level)
-{
-    assert(level < (1 << 6));
-    desc->flags = level + desc_get_state(desc);
-}
-
-static void desc_set_state(struct buddy_descriptor *desc, uint8_t state)
-{
-    assert((state == 0) || (state >= (1 << 6)));
-    desc->flags = desc_get_level(desc) + state;
-}
+#define BUDDY_FREE 0
+#define BUDDY_USED 1
 
 struct buddy_list
 {
@@ -68,7 +35,7 @@ static void list_add(struct buddy_list *list, int32_t num)
 static void list_remove(int32_t num)
 {
     assert((0 <= num) && (num < NUMBER_OF_DESCRIPTORS));
-    int level = desc_get_level(descs + num);
+    int level = descs[num].level;
     assert((0 <= level) && (level < LEVELS));
     if (descs[num].prev != VOID)
     {
@@ -89,7 +56,7 @@ void buddy_allocator_init(struct memory_chunk chunks[], int chunks_n)
     printf("Initializing buddy allocator...\n");
     for (int i = 0; i < NUMBER_OF_DESCRIPTORS; i++)
     {
-        desc_set_state(descs + i, BUDDY_USED);
+        descs[i].state = BUDDY_USED;
     }
 
     int pages_created = 0;
@@ -104,8 +71,8 @@ void buddy_allocator_init(struct memory_chunk chunks[], int chunks_n)
             {
                 halt_program("Can not handle so much memory.");
             }
-            desc_set_level(descs + desc_number, 0); 
-            desc_set_state(descs + desc_number, BUDDY_FREE);
+            descs[desc_number].level = 0; 
+            descs[desc_number].state = BUDDY_FREE;
             pages_created++;
             pointer += PAGE_SIZE;
         } 
@@ -118,13 +85,11 @@ void buddy_allocator_init(struct memory_chunk chunks[], int chunks_n)
         for (int i = 0; i < NUMBER_OF_DESCRIPTORS; i += (1 << level))
         {
             int bud = i + (1 << (level - 1));
-            if (desc_get_level(descs + i)   == level - 1 && 
-                desc_get_level(descs + bud) == level - 1 &&
-                desc_get_state(descs + i)   == BUDDY_FREE &&
-                desc_get_state(descs + bud) == BUDDY_FREE)
+            if (descs[i].level == level - 1  && descs[bud].level == level - 1 &&
+                descs[i].state == BUDDY_FREE && descs[bud].state == BUDDY_FREE)
             {
-                desc_set_level(descs + i, level);
-                desc_set_state(descs + bud, BUDDY_USED);               
+                descs[i].level = level;
+                descs[bud].state = BUDDY_USED;               
             }
         }
     }
@@ -137,9 +102,9 @@ void buddy_allocator_init(struct memory_chunk chunks[], int chunks_n)
     }
     for (int i = 0; i < NUMBER_OF_DESCRIPTORS; i++)
     {
-        if (desc_get_state(descs + i) == BUDDY_FREE)
+        if (descs[i].state == BUDDY_FREE)
         {
-            int level = desc_get_level(descs + i);
+            int level = descs[i].level;
             cnt[level]++;
             list_add(lists + level, i);           
         }
@@ -174,11 +139,8 @@ static void buddy_make_non_empty(int level)
 
     int desc_number = lists[level + 1].head;
     list_remove(desc_number);
-    desc_set_level(descs + desc_number, level);
-    // it is guaranteed by invariant
-    //desc_set_level(descs + (desc_number + (1 << level)), level);
-    //desc_set_state(descs + desc_number, BUDDY_FREE);
-    desc_set_state(descs + (desc_number + (1 << level)), BUDDY_FREE);
+    descs[desc_number].level = level;
+    descs[desc_number + (1 << level)].state = BUDDY_FREE;
     list_add(lists + level, desc_number);
     list_add(lists + level, desc_number + (1 << level)); 
 }
@@ -192,25 +154,24 @@ unsigned long buddy_allocate(int level)
     }
     int32_t result = lists[level].head;
     list_remove(result);
-    desc_set_state(descs + result, BUDDY_USED);
+    descs[result].state = BUDDY_USED;
     return ((unsigned long) PAGE_SIZE) * result;
 }
 
 static void buddy_add_and_merge(int32_t desc_num)
 {
-    int level = desc_get_level(descs + desc_num);
+    int level = descs[desc_num].level;
     // it is possible to merge
     if (level + 1 != LEVELS)
     {
         int32_t bud_desc_num = desc_num ^ (1 << level);
-        if (desc_get_state(descs + bud_desc_num) == BUDDY_FREE &&
-            desc_get_level(descs + bud_desc_num) == level)
+        if (descs[bud_desc_num].state == BUDDY_FREE && descs[bud_desc_num].level == level)
         {
             list_remove(bud_desc_num);
             int32_t smaller = min(desc_num, bud_desc_num);
             int32_t larger = max(desc_num, bud_desc_num);
-            desc_set_level(descs + smaller, level + 1);
-            desc_set_state(descs + larger, BUDDY_USED);
+            descs[smaller].level = level + 1;
+            descs[larger].state = BUDDY_USED;
             buddy_add_and_merge(smaller);
             return;
         }
@@ -226,11 +187,11 @@ void buddy_release(unsigned long phys_addr)
         halt_program("Releasing address which is not dividable by the page size.");
     }
     int32_t desc_number = phys_addr / PAGE_SIZE;
-    if (desc_get_state(descs + desc_number) != BUDDY_USED)
+    if (descs[desc_number].state != BUDDY_USED)
     {
         halt_program("Releasing not used memory.");
     }
-    desc_set_state(descs + desc_number, BUDDY_FREE);
+    descs[desc_number].state = BUDDY_FREE;
     buddy_add_and_merge(desc_number);
 }
 
