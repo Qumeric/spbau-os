@@ -1,9 +1,8 @@
 #include <desc.h>
-#include <memory.h>
+#include <memmap.h>
 #include <ioport.h>
 #include <pit.h>
 #include <ints.h>
-#include <memmap.h>
 
 void main(void)
 {
@@ -16,5 +15,6 @@ void main(void)
 
     enable_ints();
  
-    add_to_memmap_kernel();  
+    initialize_memory();  
 }
+

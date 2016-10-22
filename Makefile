@@ -7,8 +7,8 @@ CFLAGS := -g -m64 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -ffreestanding \
 	-Wno-unknown-warning-option -DDEBUG
 LFLAGS := -nostdlib -z max-page-size=0x1000
 
-INC := ./inc
-SRC := ./src
+INC := .
+SRC := .
 
 C_SOURCES := $(wildcard $(SRC)/*.c)
 C_OBJECTS := $(C_SOURCES:.c=.o)
