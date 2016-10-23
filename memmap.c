@@ -44,6 +44,7 @@ void initialize_memory()
 
     struct memory_chunk chunks[MAX_CHUNKS];
     int chunks_free = 0;
+    unsigned long memory_available = 0;
 
     while ((unsigned long) mmap < mbi->mmap_addr + mbi->mmap_length)
     {
@@ -53,6 +54,8 @@ void initialize_memory()
                     first_byte,
                     until_byte,
                     mmap->type);
+        memory_available = max(memory_available, until_byte);
+            
         if (mmap->type == 1) 
         {
             unsigned long first_intersect = max(first_byte, kernel_first_byte);
@@ -91,7 +94,11 @@ void initialize_memory()
     }
     printf("\n");
 
-    buddy_allocator_init(chunks, chunks_free);   
-    pagging_create_mapping(chunks, chunks_free);   
+    buddy_allocator_init(chunks, chunks_free); 
+
+    // ALIGN TO PAGE_SIZE
+    memory_available += PAGE_SIZE - 1;
+    memory_available -= memory_available % PAGE_SIZE;
+    pagging_create_mapping(memory_available);   
 }
 

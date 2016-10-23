@@ -3,7 +3,7 @@
 
 #include <memmap.h>
 
-void pagging_create_mapping(struct memory_chunk *chunks, int chunks_n);
+void pagging_create_mapping(unsigned long memory_available);
 
 #endif /* __PAGING_H__ */
 

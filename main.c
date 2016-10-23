@@ -20,9 +20,9 @@ void main(void)
     initialize_memory();  
 
     //testing buddy allocator
-    unsigned long addr2 = buddy_allocate(2);
+    void *addr2 = buddy_allocate(2);
     printf("ALLOCATED: 0x%lx...0x%lx\n", addr2, addr2 + (1 << 2) * PAGE_SIZE);
-    unsigned long addr3 = buddy_allocate(3);
+    void *addr3 = buddy_allocate(3);
     printf("ALLOCATED: 0x%lx...0x%lx\n", addr3, addr3 + (1 << 3) * PAGE_SIZE);
     buddy_release(addr2);
     printf("RELEASED: 0x%lx...0x%lx\n", addr2, addr2 + (1 << 2) * PAGE_SIZE);
@@ -36,5 +36,7 @@ void main(void)
     printf("RELEASED: 0x%lx...0x%lx\n", addr2, addr2 + (1 << 2) * PAGE_SIZE);
     buddy_release(addr3);
     printf("RELEASED: 0x%lx...0x%lx\n", addr3, addr3 + (1 << 3) * PAGE_SIZE);
+
+    while (1);
 }
 

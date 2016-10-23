@@ -86,7 +86,7 @@ void buddy_allocator_init(struct memory_chunk chunks[], int chunks_n)
     printf("Memory for descriptors is found at 0x%lx...0x%lx\n", 
             chunks[chunk_to_use].first,
             chunks[chunk_to_use].first + bytes_needed);
-    descs = (struct buddy_descriptor *) (chunks[chunk_to_use].first + VIRTUAL_BASE);
+    descs = (struct buddy_descriptor *) (chunks[chunk_to_use].first + SHIFTED_BASE);
     chunks[chunk_to_use].first += bytes_needed;
 
     for (int i = 0; i < number_of_descriptors; i++)
@@ -126,7 +126,7 @@ void buddy_allocator_init(struct memory_chunk chunks[], int chunks_n)
     {
         lists[i].head = VOID;
     }
-    for (int i = 0; i < number_of_descriptors; i++)
+    for (int i = number_of_descriptors - 1; i >= 0; i--)
     {
         if (descs[i].state == BUDDY_FREE)
         {
@@ -163,17 +163,18 @@ static void buddy_make_non_empty(int level)
     list_add(lists + level, desc_number + (1 << level)); 
 }
 
-unsigned long buddy_allocate(int level)
+void *buddy_allocate(int level)
 {
     buddy_make_non_empty(level);
     if (lists[level].head == VOID)
     {
-        return -1;
+        printf("ERROR: BUDDY COULD NOT ALLOCATE MEMORY.\n");
+        return (void *) -1;
     }
     int32_t result = lists[level].head;
     list_remove(result);
     descs[result].state = BUDDY_USED;
-    return ((unsigned long) PAGE_SIZE) * result;
+    return (void *) SHIFTED_BASE + ((unsigned long) PAGE_SIZE) * result;
 }
 
 static void buddy_add_and_merge(int32_t desc_num)
@@ -199,8 +200,9 @@ static void buddy_add_and_merge(int32_t desc_num)
     list_add(lists + level, desc_num);
 }
 
-void buddy_release(unsigned long phys_addr)
+void buddy_release(void *addr)
 {
+    unsigned long phys_addr = ((unsigned long) addr) - SHIFTED_BASE;
     assert(phys_addr % PAGE_SIZE == 0);
     int32_t desc_number = phys_addr / PAGE_SIZE;
     assert(desc_number < number_of_descriptors);

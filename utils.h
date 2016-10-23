@@ -4,6 +4,7 @@
 #include <io.h>
 
 void halt(const char* message, ...);
+void memset(void *ptr, unsigned char value, size_t num);
 
 unsigned long min(unsigned long x, unsigned long y);
 unsigned long max(unsigned long x, unsigned long y);
