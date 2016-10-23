@@ -2,6 +2,7 @@
 #define __BUDDY_ALLOCATOR_H__
 
 #include <memmap.h>
+#include <stdint.h>
 
 struct buddy_descriptor 
 {

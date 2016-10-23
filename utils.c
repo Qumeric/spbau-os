@@ -2,7 +2,7 @@
 #include <utils.h>
 #include <ints.h>
 
-void halt_program(const char* fmt, ...)
+void halt(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);

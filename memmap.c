@@ -1,4 +1,5 @@
 #include <memmap.h>
+#include <memory.h>
 #include <multiboot.h>
 #include <stdint.h>
 #include <io.h>
@@ -28,7 +29,7 @@ void initialize_memory()
 
     if (!CHECK_FLAG(mbi->flags, 6)) 
     {
-        halt_program("Could not get memmap.\n");
+        halt("Could not get memmap.\n");
     }
 
     unsigned long kernel_first_byte = (unsigned long) text_phys_begin;
