@@ -5,6 +5,7 @@
 #include <io.h>
 #include <utils.h>
 #include <buddy_allocator.h>
+#include <paging.h>
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
 
@@ -91,5 +92,6 @@ void initialize_memory()
     printf("\n");
 
     buddy_allocator_init(chunks, chunks_free);   
+    pagging_create_mapping(chunks, chunks_free);   
 }
 

@@ -86,7 +86,7 @@ void buddy_allocator_init(struct memory_chunk chunks[], int chunks_n)
     printf("Memory for descriptors is found at 0x%lx...0x%lx\n", 
             chunks[chunk_to_use].first,
             chunks[chunk_to_use].first + bytes_needed);
-    descs = (struct buddy_descriptor *) chunks[chunk_to_use].first;
+    descs = (struct buddy_descriptor *) (chunks[chunk_to_use].first + VIRTUAL_BASE);
     chunks[chunk_to_use].first += bytes_needed;
 
     for (int i = 0; i < number_of_descriptors; i++)
