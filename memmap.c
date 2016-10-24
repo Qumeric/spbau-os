@@ -5,6 +5,7 @@
 #include <io.h>
 #include <utils.h>
 #include <buddy_allocator.h>
+#include <malloc.h>
 #include <paging.h>
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
@@ -100,5 +101,7 @@ void initialize_memory()
     memory_available += PAGE_SIZE - 1;
     memory_available -= memory_available % PAGE_SIZE;
     pagging_create_mapping(memory_available);   
+
+    init_malloc_mechanisms();
 }
 

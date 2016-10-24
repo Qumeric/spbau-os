@@ -8,7 +8,7 @@
 
 unsigned long *create_table()
 {
-    void *addr = buddy_allocate(0);    
+    void *addr = buddy_allocate(0, NOT_FOR_CACHE);    
     memset(addr, 0, TABLE_SIZE);
     assert(((unsigned long) addr) % PAGE_SIZE == 0);
     return (unsigned long *) addr;

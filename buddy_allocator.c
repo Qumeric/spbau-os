@@ -163,17 +163,18 @@ static void buddy_make_non_empty(int level)
     list_add(lists + level, desc_number + (1 << level)); 
 }
 
-void *buddy_allocate(int level)
+void *buddy_allocate(int level, uint16_t cache_size)
 {
     buddy_make_non_empty(level);
     if (lists[level].head == VOID)
     {
         printf("ERROR: BUDDY COULD NOT ALLOCATE MEMORY.\n");
-        return (void *) -1;
+        return NOTHING;
     }
     int32_t result = lists[level].head;
     list_remove(result);
     descs[result].state = BUDDY_USED;
+    descs[result].cache_size = cache_size;
     return (void *) SHIFTED_BASE + ((unsigned long) PAGE_SIZE) * result;
 }
 
@@ -200,14 +201,22 @@ static void buddy_add_and_merge(int32_t desc_num)
     list_add(lists + level, desc_num);
 }
 
-void buddy_release(void *addr)
+struct buddy_descriptor *buddy_allocator_get_descriptor(void *logical)
 {
-    unsigned long phys_addr = ((unsigned long) addr) - SHIFTED_BASE;
+    unsigned long phys_addr = ((unsigned long) logical) - SHIFTED_BASE;
     assert(phys_addr % PAGE_SIZE == 0);
     int32_t desc_number = phys_addr / PAGE_SIZE;
     assert(desc_number < number_of_descriptors);
     assert(descs[desc_number].state == BUDDY_USED);
-    descs[desc_number].state = BUDDY_FREE;
+    return descs + desc_number; 
+}
+
+void buddy_release(void *logical)
+{
+    struct buddy_descriptor *desc = buddy_allocator_get_descriptor(logical);
+    desc->state = BUDDY_FREE;
+    unsigned long phys_addr = ((unsigned long) logical) - SHIFTED_BASE;
+    int32_t desc_number = phys_addr / PAGE_SIZE; 
     buddy_add_and_merge(desc_number);
 }
 

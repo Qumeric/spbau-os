@@ -24,24 +24,24 @@ struct cache_allocator *cache_allocator_init(uint16_t size)
         size = NODE_SIZE;
     }
     int level = get_level(size);
-    void *initial = buddy_allocate(level);
+    void *initial = buddy_allocate(level, size);
     if (initial == NOTHING)
     {
         return NOTHING;
     }
-    void *finish = ((char *) initial) + (PAGE_SIZE << level);
+    char *finish = ((char *) initial) + (PAGE_SIZE << level);
 
     struct cache_allocator *ptr = (struct cache_allocator *) initial;
     ptr->size = size;
     
-    struct cache_node_info *last = &(ptr->head);
+    struct cache_node_info *last = (struct cache_node_info *) &(ptr->head);
     struct cache_node_info *curr = (struct cache_node_info *) (ptr + 1);
     while (((char *) curr) + size <= finish)
     {
         curr->next = NOTHING;
         last->next = curr;
         last = curr;
-        curr = ((char *) curr) + size;
+        curr = (struct cache_node_info *) (((char *) curr) + size);
     }
     return ptr;
 }
@@ -53,21 +53,21 @@ void *cache_allocator_alloc(struct cache_allocator *allocator)
         // try to allocate more space and attach it to the allocator's list
         uint16_t size = allocator->size;
         int level = get_level(size);
-        void *initial = buddy_allocate(level);
+        void *initial = buddy_allocate(level, size);
         if (initial == NOTHING)
         {
             return NOTHING;
         }
-        void *finish = ((char *) initial) + (PAGE_SIZE << level);
+        char *finish = ((char *) initial) + (PAGE_SIZE << level);
 
-        struct cache_node_info *last = &(allocator->head);
+        struct cache_node_info *last = (struct cache_node_info *) (&(allocator->head));
         struct cache_node_info *curr = (struct cache_node_info *) initial;
         while (((char *) curr) + size <= finish)
         {
             curr->next = NOTHING;
             last->next = curr;
             last = curr;
-            curr = ((char *) curr) + size;
+            curr = (struct cache_node_info *) (((char *) curr) + size);
         }
     }
 
@@ -79,7 +79,6 @@ void *cache_allocator_alloc(struct cache_allocator *allocator)
 void cache_allocator_free(struct cache_allocator *allocator, void *ptr)
 {
     struct cache_node_info *node = (struct cache_node_info *) ptr;
-    struct cache_node_info *head = allocator->head;
     node->next = allocator->head;
     allocator->head = node;
 }

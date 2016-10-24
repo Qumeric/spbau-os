@@ -3,6 +3,8 @@
 
 #include <io.h>
 
+#define NOTHING ((void *) -1)
+
 void halt(const char* message, ...);
 void memset(void *ptr, unsigned char value, size_t num);
 
