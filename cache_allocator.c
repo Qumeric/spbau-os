@@ -50,7 +50,7 @@ void *cache_allocator_alloc(struct cache_allocator *allocator)
 {
     if (allocator->head == NOTHING)
     {
-        // allocator more space and attach to the allocator's list
+        // try to allocate more space and attach it to the allocator's list
         uint16_t size = allocator->size;
         int level = get_level(size);
         void *initial = buddy_allocate(level);
