@@ -4,7 +4,34 @@
 #include <pit.h>
 #include <ints.h>
 #include <buddy_allocator.h>
+#include <cache_allocator.h>
 #include <utils.h>
+
+void cache_test(uint16_t size)
+{
+    struct cache_allocator *allocator = cache_allocator_init(size);
+    int cnt = 0;
+    while (1)
+    {
+        void *memory = cache_allocator_alloc(allocator);
+        if (memory == (void *) -1)
+        {
+            break;
+        }
+        printf("ALLOC:0x%lx ", memory);
+        cache_allocator_free(allocator, memory);
+        printf("FREED ");
+        memory = cache_allocator_alloc(allocator);
+        if (memory == (void *) -1)
+        {
+            assert(0);
+        }
+        printf("ALLOC:0x%lx\n", memory);
+        cnt++;
+    }
+    printf("CACHE ALLOCATOR CREATED %d pointers of %d bytes\n", cnt, size);
+    cache_allocator_deinit(allocator);
+}
 
 void main(void)
 {
@@ -19,24 +46,10 @@ void main(void)
  
     initialize_memory();  
 
-    //testing buddy allocator
-    void *addr2 = buddy_allocate(2);
-    printf("ALLOCATED: 0x%lx...0x%lx\n", addr2, addr2 + (1 << 2) * PAGE_SIZE);
-    void *addr3 = buddy_allocate(3);
-    printf("ALLOCATED: 0x%lx...0x%lx\n", addr3, addr3 + (1 << 3) * PAGE_SIZE);
-    buddy_release(addr2);
-    printf("RELEASED: 0x%lx...0x%lx\n", addr2, addr2 + (1 << 2) * PAGE_SIZE);
-    buddy_release(addr3);
-    printf("RELEASED: 0x%lx...0x%lx\n", addr3, addr3 + (1 << 3) * PAGE_SIZE);
-    addr2 = buddy_allocate(2);
-    printf("ALLOCATED: 0x%lx...0x%lx\n", addr2, addr2 + (1 << 2) * PAGE_SIZE);
-    addr3 = buddy_allocate(3);
-    printf("ALLOCATED: 0x%lx...0x%lx\n", addr3, addr3 + (1 << 3) * PAGE_SIZE);
-    buddy_release(addr2);
-    printf("RELEASED: 0x%lx...0x%lx\n", addr2, addr2 + (1 << 2) * PAGE_SIZE);
-    buddy_release(addr3);
-    printf("RELEASED: 0x%lx...0x%lx\n", addr3, addr3 + (1 << 3) * PAGE_SIZE);
-
+    //testing cache_allocator
+    cache_test(10);
+    cache_test(1000);
+   
     while (1);
 }
 
