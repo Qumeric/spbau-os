@@ -12,13 +12,18 @@
 
 #define NOTHING ((void *) -1)
 
+static int get_level(uint16_t size)
+{
+     return size <= SMALL ? SMALL_LEVEL : LARGE_LEVEL;   
+}
+
 struct cache_allocator *cache_allocator_init(uint16_t size)
 {
     if (size < NODE_SIZE)
     {
         size = NODE_SIZE;
     }
-    int level = size <= SMALL ? SMALL_LEVEL : LARGE_LEVEL;
+    int level = get_level(size);
     void *initial = buddy_allocate(level);
     if (initial == NOTHING)
     {
@@ -41,19 +46,33 @@ struct cache_allocator *cache_allocator_init(uint16_t size)
     return ptr;
 }
 
-void cache_allocator_deinit(struct cache_allocator *allocator)
-{
-    allocator->head = NOTHING;
-    buddy_release(allocator); 
-}
-
 void *cache_allocator_alloc(struct cache_allocator *allocator)
 {
-    struct cache_node_info *result = allocator->head;
-    if (result != NOTHING)
+    if (allocator->head == NOTHING)
     {
-        allocator->head = result->next;
+        // allocator more space and attach to the allocator's list
+        uint16_t size = allocator->size;
+        int level = get_level(size);
+        void *initial = buddy_allocate(level);
+        if (initial == NOTHING)
+        {
+            return NOTHING;
+        }
+        void *finish = ((char *) initial) + (PAGE_SIZE << level);
+
+        struct cache_node_info *last = &(allocator->head);
+        struct cache_node_info *curr = (struct cache_node_info *) initial;
+        while (((char *) curr) + size <= finish)
+        {
+            curr->next = NOTHING;
+            last->next = curr;
+            last = curr;
+            curr = ((char *) curr) + size;
+        }
     }
+
+    struct cache_node_info *result = allocator->head;
+    allocator->head = result->next;
     return result;
 }
 

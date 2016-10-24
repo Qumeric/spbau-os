@@ -15,7 +15,6 @@ struct cache_allocator
 };
 
 struct cache_allocator *cache_allocator_init(uint16_t size);
-void cache_allocator_deinit(struct cache_allocator *allocator);
 
 void *cache_allocator_alloc(struct cache_allocator *allocator);
 void cache_allocator_free(struct cache_allocator *allocator, void *ptr);
